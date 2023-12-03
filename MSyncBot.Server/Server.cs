@@ -12,6 +12,8 @@ internal class Server
     public Server(string ipAddress, int port)
     private IPAddress IpAddress { get; set; }
     private MLogger Logger { get; set; }
+    
+    public Server(IPAddress ipAddress, int port, MLogger logger)
     {
         IpAddress = ipAddress;
         Port = port;
