@@ -5,7 +5,7 @@ using MLoggerService;
 
 namespace MSyncBot.Server;
 
-class Server
+internal class Server
 {
     public string IpAddress { get; set; }
     public int Port { get; set; }
