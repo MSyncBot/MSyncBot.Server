@@ -1,4 +1,5 @@
 using System.Net;
+using System.Net.Sockets;
 using System.Text;
 
 namespace MSyncBot.Server;
@@ -16,7 +17,34 @@ class Server
 
     private static readonly List<Client> Clients = new();
 
-    private static void HandleClient(object obj)
+    public void Start()
+    {
+        try
+        {
+            var server = new TcpListener(IPAddress.Parse(IpAddress), Port);
+            server.Start();
+
+            Console.WriteLine("Сервер запущен...");
+
+            while (true)
+            {
+                var tcpClient = server.AcceptTcpClient();
+                var client = new Client("name", tcpClient);
+                Clients.Add(client);
+
+                var clientThread = new Thread(HandleClient);
+                clientThread.Start(client);
+
+                Console.WriteLine($"{client.Name} {client.Id} подключился.");
+            }
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e.Message);
+        }
+    }
+
+    private void HandleClient(object obj)
     {
         var client = (Client)obj;
         var stream = client.TcpClient.GetStream();
