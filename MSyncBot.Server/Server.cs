@@ -73,7 +73,7 @@ class Server
         }
     }
 
-    private static void BroadcastMessage(string message, Client senderClient)
+    private void BroadcastMessage(string message, Client senderClient)
     {
         foreach (var clientInfo in Clients)
         {
