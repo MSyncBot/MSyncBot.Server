@@ -5,6 +5,15 @@ namespace MSyncBot.Server;
 
 class Server
 {
+    public string IpAddress { get; set; }
+    public int Port { get; set; }
+
+    public Server(string ipAddress, int port)
+    {
+        IpAddress = ipAddress;
+        Port = port;
+    }
+
     private static readonly List<Client> Clients = new();
 
     private static void HandleClient(object obj)
