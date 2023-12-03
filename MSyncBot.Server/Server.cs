@@ -7,10 +7,10 @@ namespace MSyncBot.Server;
 
 internal class Server
 {
-    public string IpAddress { get; set; }
     public int Port { get; set; }
 
     public Server(string ipAddress, int port)
+    private IPAddress IpAddress { get; set; }
     private MLogger Logger { get; set; }
     {
         IpAddress = ipAddress;
