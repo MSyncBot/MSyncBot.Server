@@ -7,10 +7,9 @@ namespace MSyncBot.Server;
 
 internal class Server
 {
-    public int Port { get; set; }
-
-    public Server(string ipAddress, int port)
     private IPAddress IpAddress { get; set; }
+    private int Port { get; set; }
+    private TcpListener TcpServer { get; set; }
     private MLogger Logger { get; set; }
     
     public Server(IPAddress ipAddress, int port, MLogger logger)
@@ -26,16 +25,16 @@ internal class Server
     {
         try
         {
-            var server = new TcpListener(IPAddress.Parse(IpAddress), Port);
-            server.Start();
             Logger.LogProcess($"Starting server on {IpAddress}:{Port}...");
             
+            TcpServer = new TcpListener(IpAddress, Port);
+            TcpServer.Start();
 
             Logger.LogSuccess($"Server successfully started on {IpAddress}:{Port}");
             
             while (true)
             {
-                var tcpClient = server.AcceptTcpClient();
+                var tcpClient = TcpServer.AcceptTcpClient();
                 var client = new Client("name", tcpClient);
                 Clients.Add(client);
 
