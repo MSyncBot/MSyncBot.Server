@@ -50,6 +50,13 @@ internal class Server
         }
     }
 
+    public void Stop()
+    {
+        Logger.LogProcess("Stopping server...");
+        TcpServer.Stop();
+        Logger.LogSuccess("Server successfully stopped.");
+    }
+
     private void HandleClient(object obj)
     {
         var client = (Client)obj;
