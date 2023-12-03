@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using MLoggerService;
 
 namespace MSyncBot.Server;
 
@@ -10,9 +11,11 @@ class Server
     public int Port { get; set; }
 
     public Server(string ipAddress, int port)
+    private MLogger Logger { get; set; }
     {
         IpAddress = ipAddress;
         Port = port;
+        Logger = logger;
     }
 
     private static readonly List<Client> Clients = new();
@@ -23,9 +26,11 @@ class Server
         {
             var server = new TcpListener(IPAddress.Parse(IpAddress), Port);
             server.Start();
+            Logger.LogProcess($"Starting server on {IpAddress}:{Port}...");
+            
 
-            Console.WriteLine("Сервер запущен...");
-
+            Logger.LogSuccess($"Server successfully started on {IpAddress}:{Port}");
+            
             while (true)
             {
                 var tcpClient = server.AcceptTcpClient();
@@ -35,12 +40,12 @@ class Server
                 var clientThread = new Thread(HandleClient);
                 clientThread.Start(client);
 
-                Console.WriteLine($"{client.Name} {client.Id} подключился.");
+                Logger.LogInformation($"{client.Name} {client.Id} connected.");
             }
         }
         catch (Exception e)
         {
-            Console.WriteLine(e.Message);
+            Logger.LogError(e.Message);
         }
     }
 
@@ -59,7 +64,7 @@ class Server
                 var bytes = stream.Read(data, 0, data.Length);
                 builder.Append(Encoding.UTF8.GetString(data, 0, bytes));
                 var message = builder.ToString();
-                Console.WriteLine($"Получено от {client.Name} {client.Id}: {message}");
+                Logger.LogInformation($"Received from {client.Name} {client.Id}: {message}");
 
                 BroadcastMessage(message, client);
                 builder.Clear();
@@ -69,7 +74,7 @@ class Server
         {
             Clients.Remove(client);
             client.TcpClient.Close();
-            Console.WriteLine($"{client.Name} {client.Id} отключился.");
+            Logger.LogInformation($"{client.Name} {client.Id} disconnected.");
         }
     }
 
