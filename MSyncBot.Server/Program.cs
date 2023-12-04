@@ -8,7 +8,10 @@ class Program
     static void Main()
     {
         var logger = new MLogger();
-        var server = new Server(IPAddress.Parse("127.0.0.1"), 8888, logger);
+        logger.LogInformation("Enter server ip:");
+        var ipAddress = Console.ReadLine();
+        var server = new Server(IPAddress.Parse(ipAddress), 1689, logger);
+        
         try
         {
             server.Start();
