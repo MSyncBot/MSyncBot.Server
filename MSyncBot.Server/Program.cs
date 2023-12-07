@@ -14,8 +14,9 @@ class Program
         
         try
         {
-            server.Start();
+            server.StartAsync();
             logger.LogInformation("Press any key for close program...");
+            Console.ReadKey();
         }
         finally
         {
