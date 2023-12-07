@@ -10,7 +10,7 @@ class Program
         var logger = new MLogger();
         logger.LogInformation("Enter server ip:");
         var ipAddress = Console.ReadLine();
-        var server = new Server(IPAddress.Parse(ipAddress), 1689, logger);
+        var server = new Server(IPAddress.Parse(ipAddress), logger);
         
         try
         {
