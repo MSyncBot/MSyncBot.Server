@@ -1,99 +1,114 @@
+using System;
+using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using MLoggerService;
 
-namespace MSyncBot.Server;
-
-internal class Server
+namespace MSyncBot.Server
 {
-    private IPAddress IpAddress { get; set; }
-    private int Port { get; set; }
-    private TcpListener TcpServer { get; set; }
-    private MLogger Logger { get; set; }
-    
-    public Server(IPAddress ipAddress, int port, MLogger logger)
+    internal class Server
     {
-        IpAddress = ipAddress;
-        Port = port;
-        Logger = logger;
-    }
+        private IPAddress IpAddress { get; }
+        private const int Port = 1689;
+        private TcpListener TcpServer { get; }
+        private bool IsRunning { get; set; }
+        private MLogger Logger { get; set; }
 
-    private static readonly List<Client> Clients = new();
-
-    public void Start()
-    {
-        try
+        public Server(IPAddress ipAddress, MLogger logger)
         {
-            Logger.LogProcess($"Starting server on {IpAddress}:{Port}...");
-            
+            IpAddress = ipAddress;
+            Logger = logger;
             TcpServer = new TcpListener(IpAddress, Port);
-            TcpServer.Start();
+            IsRunning = false;
+        }
 
-            Logger.LogSuccess($"Server successfully started on {IpAddress}:{Port}");
-            
-            while (true)
+        private readonly List<TcpClient> Clients = new();
+
+        public async Task StartAsync()
+        {
+            try
             {
-                var tcpClient = TcpServer.AcceptTcpClient();
-                var client = new Client("name", tcpClient);
-                Clients.Add(client);
+                if (IsRunning)
+                {
+                    Logger.LogError("The server already running!");
+                    return;
+                }
 
-                var clientThread = new Thread(HandleClient);
-                clientThread.Start(client);
+                Logger.LogProcess($"Starting server on {IpAddress}:{Port}...");
+                TcpServer.Start();
+                IsRunning = true;
+                Logger.LogSuccess($"Server successfully started on {IpAddress}:{Port}");
 
-                Logger.LogInformation($"{client.Name} {client.Id} connected.");
+                while (IsRunning)
+                {
+                    var tcpClient = await TcpServer.AcceptTcpClientAsync();
+                    _ = HandleClientAsync(tcpClient);
+                    Logger.LogSuccess($"client connected.");
+                }
+            }
+            catch (Exception e)
+            {
+                Logger.LogError(e.Message);
             }
         }
-        catch (Exception e)
+
+        private async Task HandleClientAsync(TcpClient tcpClient)
         {
-            Logger.LogError(e.Message);
-        }
-    }
-
-    public void Stop()
-    {
-        Logger.LogProcess("Stopping server...");
-        TcpServer.Stop();
-        Logger.LogSuccess("Server successfully stopped.");
-    }
-
-    private void HandleClient(object obj)
-    {
-        var client = (Client)obj;
-        var stream = client.TcpClient.GetStream();
-
-        var data = new byte[256];
-        var builder = new StringBuilder();
-
-        try
-        {
-            while (true)
+            try
             {
-                var bytes = stream.Read(data, 0, data.Length);
-                builder.Append(Encoding.UTF8.GetString(data, 0, bytes));
-                var message = builder.ToString();
-                Logger.LogInformation($"Received from {client.Name} {client.Id}: {message}");
-
-                BroadcastMessage(message, client);
-                builder.Clear();
+                var stream = tcpClient.GetStream();
+                while (tcpClient.Connected)
+                {
+                    var message = await ReceiveMessageAsync(stream);
+                    Logger.LogInformation(message);
+                    await SendMessageAsync(stream, message);
+                }
+            }
+            catch (Exception)
+            {
+                Clients.Remove(tcpClient);
+                tcpClient.Close();
+                Logger.LogError($"client disconnected.");
             }
         }
-        catch (Exception)
-        {
-            Clients.Remove(client);
-            client.TcpClient.Close();
-            Logger.LogInformation($"{client.Name} {client.Id} disconnected.");
-        }
-    }
 
-    private static void BroadcastMessage(string message, Client senderClient)
-    {
-        foreach (var clientInfo in Clients)
+        private async Task<string> ReceiveMessageAsync(NetworkStream stream)
         {
-            if (clientInfo == senderClient) continue;
-            var stream = senderClient.TcpClient.GetStream();
-            var responseData = Encoding.UTF8.GetBytes($"{senderClient.Name} {senderClient.Id}: {message}");
-            stream.Write(responseData, 0, responseData.Length);
+            try
+            {
+                var completeMessage = new StringBuilder();
+                var bufferSize = new byte[1024];
+                var bytesRead = await stream.ReadAsync(bufferSize);
+                completeMessage.Append(Encoding.UTF8.GetString(bufferSize, 0, bytesRead));
+                return completeMessage.ToString();
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex.Message);
+                return string.Empty;
+            }
+        }
+
+        private async Task SendMessageAsync(NetworkStream stream, string message)
+        {
+            try
+            {
+                var data = Encoding.UTF8.GetBytes(message);
+                await stream.WriteAsync(data);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex.Message);
+            }
+        }
+
+        public void Stop()
+        {
+            Logger.LogProcess("Stopping server...");
+            TcpServer.Stop();
+            IsRunning = false;
+            Logger.LogSuccess("Server successfully stopped.");
         }
     }
 }
