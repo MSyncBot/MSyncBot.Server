@@ -22,7 +22,7 @@ namespace MSyncBot.Server
             IsRunning = false;
         }
 
-        private readonly List<TcpClient> Clients = new();
+        private readonly Dictionary<Guid, Client> Clients = new();
 
         public async Task StartAsync()
         {
@@ -43,7 +43,6 @@ namespace MSyncBot.Server
                 {
                     var tcpClient = await TcpServer.AcceptTcpClientAsync();
                     _ = HandleClientAsync(tcpClient);
-                    Logger.LogSuccess($"client connected.");
                 }
             }
             catch (Exception e)
@@ -54,47 +53,131 @@ namespace MSyncBot.Server
 
         private async Task HandleClientAsync(TcpClient tcpClient)
         {
+            var clientId = Guid.NewGuid();
             try
             {
+                RegisterClient(clientId, tcpClient);
+                var isFirstTime = true;
+
                 var stream = tcpClient.GetStream();
                 while (tcpClient.Connected)
                 {
-                    var message = await ReceiveMessageAsync(stream);
-                    Logger.LogInformation(message);
-                    await SendMessageAsync(stream, message);
+                    var client = await ReceiveMessageAsync(stream);
+                    if (isFirstTime)
+                    {
+                        client.TcpClient = tcpClient;
+                        UpdateClientData(clientId, new Client(client));
+                        isFirstTime = false;
+                        Logger.LogSuccess($"{client.Name} connected.");
+                        continue;
+                    }
+
+                    Logger.LogInformation(client.Name + ": " + client.Message);
+                    await SendMessageAsync(client);
                 }
             }
             catch (Exception)
             {
-                Clients.Remove(tcpClient);
                 tcpClient.Close();
-                Logger.LogError($"client disconnected.");
+                if (Clients.TryGetValue(clientId, out var client))
+                {
+                    Clients.Remove(clientId);
+                    Logger.LogError($"{client.Name} disconnected.");
+                }
             }
         }
 
-        private async Task<string> ReceiveMessageAsync(NetworkStream stream)
+        private async Task<Client?> ReceiveMessageAsync(Stream stream)
         {
             try
             {
-                var completeMessage = new StringBuilder();
-                var bufferSize = new byte[1024];
-                var bytesRead = await stream.ReadAsync(bufferSize);
-                completeMessage.Append(Encoding.UTF8.GetString(bufferSize, 0, bytesRead));
-                return completeMessage.ToString();
+                var completeMessage = new byte[1024];
+                var bytesRead = await stream.ReadAsync(completeMessage);
+
+                if (bytesRead > 0)
+                {
+                    var client = Encoding.UTF8.GetString(completeMessage, 0, bytesRead);
+                    return JsonConvert.DeserializeObject<Client>(client);
+                }
             }
             catch (Exception ex)
             {
                 Logger.LogError(ex.Message);
-                return string.Empty;
             }
+
+            return null;
         }
 
-        private async Task SendMessageAsync(NetworkStream stream, string message)
+        private async Task SendMessageAsync(Client sender)
         {
             try
             {
-                var data = Encoding.UTF8.GetBytes(message);
-                await stream.WriteAsync(data);
+                var senderId = Clients.FirstOrDefault(x => x.Value.Name == sender.Name).Key;
+                switch (sender.ClientType)
+                {
+                    case ClientType.Telegram:
+                        foreach (var (id, cl) in Clients)
+                        {
+                            if (id == senderId ||
+                                (cl.ClientType != ClientType.Discord && cl.ClientType != ClientType.VK)) continue;
+                            var recipientData = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(sender));
+                            await cl.TcpClient.GetStream().WriteAsync(recipientData);
+                        }
+
+                        return;
+
+                    case ClientType.Discord:
+                        foreach (var (id, cl) in Clients)
+                        {
+                            if (id == senderId ||
+                                (cl.ClientType != ClientType.Telegram && cl.ClientType != ClientType.VK)) continue;
+                            var recipientData = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(sender));
+                            await cl.TcpClient.GetStream().WriteAsync(recipientData);
+                        }
+
+                        return;
+
+                    case ClientType.VK:
+                        foreach (var (id, cl) in Clients)
+                        {
+                            if (id == senderId || (cl.ClientType != ClientType.Telegram &&
+                                    cl.ClientType != ClientType.Discord)) continue;
+                            var recipientData = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(sender));
+                            await cl.TcpClient.GetStream().WriteAsync(recipientData);
+                        }
+
+                        return;
+
+                    case ClientType.None:
+                    default:
+                        Logger.LogError("Unknown client type.");
+                        return;
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex.Message);
+            }
+        }
+        
+        private void RegisterClient(Guid clientId, TcpClient tcpClient)
+        {
+            try
+            {
+                Clients.Add(clientId, new Client("Unknown", tcpClient, ClientType.None));
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex.Message);
+            }
+        }
+
+        private void UpdateClientData(Guid clientId, Client updatedClient)
+        {
+            try
+            {
+                if (!Clients.ContainsKey(clientId)) return;
+                Clients[clientId] = updatedClient;
             }
             catch (Exception ex)
             {
