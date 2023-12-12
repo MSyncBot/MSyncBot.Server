@@ -9,7 +9,7 @@ class Program
     static void Main(string[] args)
     {
         var logger = new MLogger();
-        var server = new Server(IPAddress.Parse("127.0.0.1"), 1689);
+        var server = new Server(IPAddress.Parse("127.0.0.1"), 1689, logger);
         logger.LogInformation($"TCP server address: {server.Address}");
         logger.LogInformation($"TCP server port: {server.Port}");
         

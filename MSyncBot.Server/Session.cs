@@ -1,16 +1,17 @@
 using System.Net.Sockets;
 using System.Text;
+using MLoggerService;
 using NetCoreServer;
 
 namespace MSyncBot.Server;
 
-class Session : TcpSession
+class Session(TcpServer server, MLogger logger) : TcpSession(server)
 {
-    public Session(TcpServer server) : base(server) {}
+    private MLogger Logger { get; } = logger;
 
     protected override void OnConnected()
     {
-        Console.WriteLine($"Chat TCP session with Id {Id} connected!");
+        Logger.LogInformation($"TCP client session with Id {Id} connected!");
         
         string message = "Hello from TCP chat! Please send a message or '!' to disconnect the client!";
         SendAsync(message);
@@ -18,7 +19,7 @@ class Session : TcpSession
 
     protected override void OnDisconnected()
     {
-        Console.WriteLine($"Chat TCP session with Id {Id} disconnected!");
+        Logger.LogInformation($"TCP client session with Id {Id} disconnected!");
     }
 
     protected override void OnReceived(byte[] buffer, long offset, long size)
@@ -26,7 +27,7 @@ class Session : TcpSession
         string message = Encoding.UTF8.GetString(buffer, (int)offset, (int)size);
         Console.WriteLine("Incoming: " + message);
 
-        Server.Multicast(message);
+        Logger.LogInformation($"Received message from {receivedMessage.SenderName}: {receivedMessage.Content}");
         
         if (message == "!")
             Disconnect();
@@ -34,6 +35,6 @@ class Session : TcpSession
 
     protected override void OnError(SocketError error)
     {
-        Console.WriteLine($"Chat TCP session caught an error with code {error}");
+        Logger.LogError($"Chat TCP session caught an error with code {error}");
     }
 }
