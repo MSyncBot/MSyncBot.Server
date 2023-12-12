@@ -13,9 +13,10 @@ class Session(TcpServer server, MLogger logger) : TcpSession(server)
     protected override void OnConnected()
     {
         Logger.LogInformation($"TCP client session with Id {Id} connected!");
-        
-        const string welcomeMessage = "You successfully connected to the server.";
-        SendAsync(welcomeMessage);
+        var welcomeMessage = new Message("MSyncBot.Server", 0, SenderType.Server,
+            "You successfully connected to the server.");
+        var jsonWelcomeMessage = JsonSerializer.Serialize(welcomeMessage);
+        SendAsync(jsonWelcomeMessage);
     }
 
     protected override void OnDisconnected()

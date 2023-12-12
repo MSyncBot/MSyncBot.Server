@@ -28,5 +28,6 @@ public enum SenderType
     Telegram,
     Discord,
     VK,
+    Server,
     None,
 }
