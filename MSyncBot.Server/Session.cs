@@ -1,5 +1,6 @@
 using System.Net.Sockets;
 using System.Text;
+using System.Text.Json;
 using MLoggerService;
 using NetCoreServer;
 
@@ -24,13 +25,13 @@ class Session(TcpServer server, MLogger logger) : TcpSession(server)
 
     protected override void OnReceived(byte[] buffer, long offset, long size)
     {
-        string message = Encoding.UTF8.GetString(buffer, (int)offset, (int)size);
-        Console.WriteLine("Incoming: " + message);
+        var jsonMessage = Encoding.UTF8.GetString(buffer, (int)offset, (int)size);
+        var receivedMessage = JsonSerializer.Deserialize<Message>(jsonMessage);
 
         Logger.LogInformation($"Received message from {receivedMessage.SenderName}: {receivedMessage.Content}");
         
-        if (message == "!")
-            Disconnect();
+        Server.Multicast(jsonMessage);
+        
     }
 
     protected override void OnError(SocketError error)
