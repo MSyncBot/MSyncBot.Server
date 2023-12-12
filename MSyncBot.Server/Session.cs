@@ -32,6 +32,8 @@ class Session(TcpServer server, MLogger logger) : TcpSession(server)
         
         Server.Multicast(jsonMessage);
         
+        /*if (message == "!")
+            Disconnect();*/
     }
 
     protected override void OnError(SocketError error)
