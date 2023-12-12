@@ -33,7 +33,7 @@ class Program
                 continue;
             }
             
-            line = "(admin) " + line;
+            line = "Server: " + line;
             server.Multicast(line);
         }
         
