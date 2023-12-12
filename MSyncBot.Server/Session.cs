@@ -13,8 +13,8 @@ class Session(TcpServer server, MLogger logger) : TcpSession(server)
     {
         Logger.LogInformation($"TCP client session with Id {Id} connected!");
         
-        string message = "Hello from TCP chat! Please send a message or '!' to disconnect the client!";
-        SendAsync(message);
+        const string welcomeMessage = "You successfully connected to the server.";
+        SendAsync(welcomeMessage);
     }
 
     protected override void OnDisconnected()
