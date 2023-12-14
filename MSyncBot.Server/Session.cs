@@ -36,8 +36,6 @@ class Session(TcpServer server, MLogger logger) : TcpSession(server)
 
         Logger.LogInformation($"Received message from {receivedMessage.SenderName}: {receivedMessage.Content}");
         server.Multicast(jsonMessage);
-        /*if (message == "!")
-            Disconnect();*/
     }
 
     protected override void OnError(SocketError error)
