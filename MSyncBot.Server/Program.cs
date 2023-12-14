@@ -1,6 +1,9 @@
 ﻿using System.ComponentModel.Design.Serialization;
 using System.Net;
+using System.Text.Json;
 using MLoggerService;
+using MSyncBot.Server.Types;
+using MSyncBot.Server.Types.Enums;
 
 namespace MSyncBot.Server;
 
@@ -21,11 +24,11 @@ class Program
         
         for (;;)
         {
-            var line = Console.ReadLine();
-            if (string.IsNullOrEmpty(line))
+            var message = Console.ReadLine();
+            if (string.IsNullOrEmpty(message))
                 break;
             
-            if (line == "!")
+            if (message == "!")
             {
                 logger.LogProcess("Server restarting...");
                 server.Restart();
@@ -33,8 +36,14 @@ class Program
                 continue;
             }
             
-            line = "Server: " + line;
-            server.Multicast(line);
+            var serverMessage = new Message("MSyncBot.Server", 
+                0, 
+                SenderType.Server,
+                message,
+                new User("Server"));
+            var jsonServerMessage = JsonSerializer.Serialize(serverMessage);
+            
+            server.Multicast(jsonServerMessage);
         }
         
         logger.LogProcess("Server stopping...");
