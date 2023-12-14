@@ -2,6 +2,8 @@ using System.Net.Sockets;
 using System.Text;
 using System.Text.Json;
 using MLoggerService;
+using MSyncBot.Server.Types;
+using MSyncBot.Server.Types.Enums;
 using NetCoreServer;
 
 namespace MSyncBot.Server;
@@ -9,12 +11,15 @@ namespace MSyncBot.Server;
 class Session(TcpServer server, MLogger logger) : TcpSession(server)
 {
     private MLogger Logger { get; } = logger;
-
+    
     protected override void OnConnected()
     {
         Logger.LogInformation($"TCP client session with Id {Id} connected!");
-        var welcomeMessage = new Message("MSyncBot.Server", 0, SenderType.Server,
-            "You successfully connected to the server.");
+        var welcomeMessage = new Message("MSyncBot.Server", 
+            0, 
+            SenderType.Server,
+            "You successfully connected to the server.",
+            new User("Server"));
         var jsonWelcomeMessage = JsonSerializer.Serialize(welcomeMessage);
         SendAsync(jsonWelcomeMessage);
     }
@@ -30,9 +35,7 @@ class Session(TcpServer server, MLogger logger) : TcpSession(server)
         var receivedMessage = JsonSerializer.Deserialize<Message>(jsonMessage);
 
         Logger.LogInformation($"Received message from {receivedMessage.SenderName}: {receivedMessage.Content}");
-        
-        Server.Multicast(jsonMessage);
-        
+        server.Multicast(jsonMessage);
         /*if (message == "!")
             Disconnect();*/
     }
