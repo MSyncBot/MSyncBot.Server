@@ -1,6 +1,8 @@
-﻿namespace MSyncBot.Server.Types;
+﻿using MSyncBot.Server.Types.Enums;
 
-public class MediaFile(string name, string extension, byte[] data)
+namespace MSyncBot.Server.Types;
+
+public class MediaFile(string name, string extension, byte[] data, FileType fileType)
 {
     public string Name { get; set; } = name;
     public string Extension { get; set; } = extension;
