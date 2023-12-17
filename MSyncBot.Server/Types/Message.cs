@@ -12,6 +12,7 @@ public class Message(string senderName, int senderId, SenderType senderType, str
     public string Content { get; set; } = content;
     public User User { get; set; } = user;
     public List<MediaFile> MediaFiles = new();
+    public Enums.MessageType MessageType { get; set; } = messageType;
     private static int messageIdCounter;
     private static int GenerateMessageId() => messageIdCounter++;
 }
