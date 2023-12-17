@@ -1,45 +1,46 @@
-using System.Net.Sockets;
+﻿using System.Net.Sockets;
 using System.Text;
 using System.Text.Json;
 using MLoggerService;
 using MSyncBot.Server.Types;
-using MSyncBot.Server.Types.Enums;
 using NetCoreServer;
 
 namespace MSyncBot.Server;
 
-class Session(TcpServer server, MLogger logger) : TcpSession(server)
+class Session(WsServer server, MLogger logger) : WsSession(server)
 {
-    private MLogger Logger { get; } = logger;
+    private MLogger Logger { get; set; } = logger;
     
-    protected override void OnConnected()
+    public override void OnWsConnected(HttpRequest request)
     {
-        Logger.LogInformation($"TCP client session with Id {Id} connected!");
-        var welcomeMessage = new Message("MSyncBot.Server", 
-            0, 
-            SenderType.Server,
-            "You successfully connected to the server.",
-            new User("Server"));
-        var jsonWelcomeMessage = JsonSerializer.Serialize(welcomeMessage);
-        SendAsync(jsonWelcomeMessage);
+        Logger.LogSuccess($"Chat WebSocket session with Id {Id} connected!");
+        
+        //string message = "Hello from WebSocket chat! Please send a message or '!' to disconnect the client!";
+        //SendTextAsync(message);
     }
 
-    protected override void OnDisconnected()
+    public override void OnWsDisconnected()
     {
-        Logger.LogInformation($"TCP client session with Id {Id} disconnected!");
+        Logger.LogError($"Chat WebSocket session with Id {Id} disconnected!");
     }
 
-    protected override void OnReceived(byte[] buffer, long offset, long size)
+    public override void OnWsReceived(byte[] buffer, long offset, long size)
     {
-        var jsonMessage = Encoding.UTF8.GetString(buffer, (int)offset, (int)size);
-        var receivedMessage = JsonSerializer.Deserialize<Message>(jsonMessage);
+        string jsonMessage = Encoding.UTF8.GetString(buffer, (int)offset, (int)size);
+        Logger.LogInformation("Incoming: " + jsonMessage);
 
-        Logger.LogInformation($"Received message from {receivedMessage.SenderName}: {receivedMessage.Content}");
-        server.Multicast(jsonMessage);
+        var message = JsonSerializer.Deserialize<Message>(jsonMessage);
+        
+        // Multicast message to all connected sessions
+        ((WsServer)Server).MulticastText(jsonMessage);
+
+        // If the buffer starts with '!' the disconnect the current session
+        if (message.Content == "!")
+            Close(1000);
     }
 
     protected override void OnError(SocketError error)
     {
-        Logger.LogError($"Chat TCP session caught an error with code {error}");
+        Logger.LogError($"Chat WebSocket session caught an error with code {error}");
     }
 }

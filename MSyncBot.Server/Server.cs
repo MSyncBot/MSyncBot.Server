@@ -5,14 +5,14 @@ using NetCoreServer;
 
 namespace MSyncBot.Server;
 
-class Server(IPAddress address, int port, MLogger logger) : TcpServer(address, port)
+class Server(IPAddress address, int port, MLogger logger) : WsServer(address, port)
 {
-    private MLogger Logger { get; } = logger;
-
-    protected override TcpSession CreateSession() { return new Session(this, Logger); }
+    private MLogger Logger { get; set; } = logger;
+    
+    protected override TcpSession CreateSession() { return new Session(this, logger); }
 
     protected override void OnError(SocketError error)
     {
-        Logger.LogError($"Chat TCP server caught an error with code {error}");
+        Logger.LogError($"Chat WebSocket server caught an error with code {error}");
     }
 }
