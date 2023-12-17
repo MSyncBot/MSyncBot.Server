@@ -13,6 +13,6 @@ class Server(IPAddress address, int port, MLogger logger) : WsServer(address, po
 
     protected override void OnError(SocketError error)
     {
-        Logger.LogError($"Chat TCP server caught an error with code {error}");
+        Logger.LogError($"Chat WebSocket server caught an error with code {error}");
     }
 }

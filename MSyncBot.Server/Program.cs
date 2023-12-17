@@ -1,53 +1,59 @@
-﻿using System.ComponentModel.Design.Serialization;
-using System.Net;
+﻿using System.Net;
+using System.Net.Security;
 using System.Text.Json;
 using MLoggerService;
 using MSyncBot.Server.Types;
 using MSyncBot.Server.Types.Enums;
 
-namespace MSyncBot.Server;
-
-class Program
+namespace MSyncBot.Server
 {
-    private static void Main(string[] args)
+    class Program
     {
-        var logger = new MLogger();
-        var server = new Server(IPAddress.Parse("127.0.0.1"), 1689, logger);
-        logger.LogInformation($"TCP server address: {server.Address}");
-        logger.LogInformation($"TCP server port: {server.Port}");
-
-        logger.LogProcess("Server starting...");
-        server.Start();
-        logger.LogSuccess("Done!");
-
-        logger.LogInformation("Press Enter to stop the server or '!' to restart the server...");
-
-        for (;;)
+        static void Main(string[] args)
         {
-            var message = Console.ReadLine();
-            if (string.IsNullOrEmpty(message))
-                break;
+            var logger = new MLogger();
+            logger.LogProcess("Starting the server...");
+            
+            const int port = 8080;
+            var ipAddress = IPAddress.Any;
+            var server = new Server(ipAddress, port, logger);
+            
+            server.Start();
+            logger.LogSuccess("The server successfully started.");
+            logger.LogInformation($"Server address: {ipAddress}");
+            logger.LogInformation($"Server port: {port}");
 
-            if (message == "!")
+            logger.LogInformation("Press Enter to stop the server or '!' to restart the server...");
+            
+            for (;;)
             {
-                logger.LogProcess("Server restarting...");
-                server.Restart();
-                logger.LogSuccess("Done!");
-                continue;
+                var message = Console.ReadLine();
+                if (string.IsNullOrEmpty(message))
+                    break;
+
+                if (message == "!")
+                {
+                    logger.LogProcess("Restarting the server...");
+                    server.Restart();
+                    logger.LogSuccess("The server successfully restarted.");
+                }
+
+                var adminMessage = new Message("Server",
+                    0,
+                    SenderType.Server,
+                    MessageType.Text,
+                    new User("Administrator"))
+                {
+                    Content = message
+                };
+
+                var adminJsonMessage = JsonSerializer.Serialize(adminMessage);
+                server.MulticastText(adminJsonMessage);
             }
 
-            var serverMessage = new Message("MSyncBot.Server", 
-                0, 
-                SenderType.Server,
-                message,
-                new User("Server"));
-            var jsonServerMessage = JsonSerializer.Serialize(serverMessage);
-
-            server.Multicast(jsonServerMessage);
+            logger.LogProcess("Stopping the server...");
+            server.Stop();
+            logger.LogSuccess("Done!");
         }
-
-        logger.LogProcess("Server stopping...");
-        server.Stop();
-        logger.LogSuccess("Done!");
     }
 }
