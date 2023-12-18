@@ -3,6 +3,7 @@ using System.Text;
 using System.Text.Json;
 using MLoggerService;
 using MSyncBot.Server.Types;
+using MSyncBot.Server.Types.Enums;
 using NetCoreServer;
 
 namespace MSyncBot.Server;
@@ -26,15 +27,22 @@ class Session(WsServer server, MLogger logger) : WsSession(server)
 
     public override void OnWsReceived(byte[] buffer, long offset, long size)
     {
-        string jsonMessage = Encoding.UTF8.GetString(buffer, (int)offset, (int)size);
-        Logger.LogInformation("Incoming: " + jsonMessage);
-
-        var message = JsonSerializer.Deserialize<Message>(jsonMessage);
-        
-        // Multicast message to all connected sessions
+        var jsonMessage = Encoding.UTF8.GetString(buffer, (int)offset, (int)size);
         ((WsServer)Server).MulticastText(jsonMessage);
+        
+        var message = JsonSerializer.Deserialize<Message>(jsonMessage);
 
-        // If the buffer starts with '!' the disconnect the current session
+        var messageInfo = message.MessageType switch
+        {
+            MessageType.Text => $"text: {message.Content}",
+            MessageType.Photo => $"photo: {message.MediaFiles[0].Name}{message.MediaFiles[0].Extension}",
+            MessageType.Video => $"video: {message.MediaFiles[0].Name}{message.MediaFiles[0].Extension}",
+            MessageType.Voice => $"voice: {message.MediaFiles[0].Name}{message.MediaFiles[0].Extension}",
+            _ => throw new ArgumentOutOfRangeException()
+        };
+        
+        logger.LogInformation($"Received from {message.SenderName} with {messageInfo}");
+        
         if (message.Content == "!")
             Close(1000);
     }
