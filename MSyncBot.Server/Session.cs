@@ -2,8 +2,8 @@
 using System.Text;
 using System.Text.Json;
 using MLoggerService;
-using MSyncBot.Server.Types;
-using MSyncBot.Server.Types.Enums;
+using MSyncBot.Types;
+using MSyncBot.Types.Enums;
 using NetCoreServer;
 
 namespace MSyncBot.Server;
