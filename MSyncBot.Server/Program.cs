@@ -9,12 +9,12 @@ namespace MSyncBot.Server
 {
     class Program
     {
-        static void Main(string[] args)
+        private static void Main()
         {
             var logger = new MLogger();
             logger.LogProcess("Starting the server...");
             
-            const int port = 8080;
+            const int port = 1689;
             var ipAddress = IPAddress.Any;
             var server = new Server(ipAddress, port, logger);
             
