@@ -38,6 +38,11 @@ class Session(WsServer server, MLogger logger) : WsSession(server)
             MessageType.Photo => $"photo: {message.MediaFiles[0].Name}{message.MediaFiles[0].Extension}",
             MessageType.Video => $"video: {message.MediaFiles[0].Name}{message.MediaFiles[0].Extension}",
             MessageType.Voice => $"voice: {message.MediaFiles[0].Name}{message.MediaFiles[0].Extension}",
+            MessageType.Album => $"album, number of media: {message.MediaFiles.Count}",
+            MessageType.Audio => $"audio: {message.MediaFiles[0].Name}{message.MediaFiles[0].Extension}",
+            MessageType.Animation => $"animation: {message.MediaFiles[0].Name}{message.MediaFiles[0].Extension}",
+            MessageType.Document => $"document or file: {message.MediaFiles[0].Name}{message.MediaFiles[0].Extension}",
+            MessageType.VideoNote => $"video note: {message.MediaFiles[0].Name}{message.MediaFiles[0].Extension}",
             _ => throw new ArgumentOutOfRangeException()
         };
         
