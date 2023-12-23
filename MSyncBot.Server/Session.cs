@@ -43,6 +43,7 @@ class Session(WsServer server, MLogger logger) : WsSession(server)
             MessageType.Animation => $"animation: {message.MediaFiles[0].Name}{message.MediaFiles[0].Extension}",
             MessageType.Document => $"document or file: {message.MediaFiles[0].Name}{message.MediaFiles[0].Extension}",
             MessageType.VideoNote => $"video note: {message.MediaFiles[0].Name}{message.MediaFiles[0].Extension}",
+            MessageType.Unknown => $"unknown info",
             _ => throw new ArgumentOutOfRangeException()
         };
         
