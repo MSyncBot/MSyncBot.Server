@@ -47,7 +47,7 @@ class Session(WsServer server, MLogger logger) : WsSession(server)
             _ => throw new ArgumentOutOfRangeException()
         };
         
-        logger.LogInformation($"Received from {message.SenderName} with {messageInfo}");
+        logger.LogInformation($"Received from {message.Messenger.Name} with {messageInfo}");
         
         if (message.Content == "!")
             Close(1000);

@@ -38,11 +38,11 @@ namespace MSyncBot.Server
                     logger.LogSuccess("The server successfully restarted.");
                 }
 
-                var adminMessage = new Message("Server",
-                    0,
-                    SenderType.Server,
+                var adminMessage = new Message(
+                    new Messenger("Server", MessengerType.Server),
                     MessageType.Text,
-                    new User("Administrator"))
+                    new User("Administrator"),
+                    new Chat("Server", 0))
                 {
                     Content = message
                 };
