@@ -32,18 +32,23 @@ class Session(WsServer server, MLogger logger) : WsSession(server)
         
         var message = JsonSerializer.Deserialize<Message>(jsonMessage);
 
+        var file = string.Empty;
+        if (message.MediaFiles.Count > 0)
+            file = $"{message.MediaFiles[0].Name}{message.MediaFiles[0].Extension}";
+        
         var messageInfo = message.MessageType switch
         {
             MessageType.Text => $"text: {message.Content}",
-            MessageType.Photo => $"photo: {message.MediaFiles[0].Name}{message.MediaFiles[0].Extension}",
-            MessageType.Video => $"video: {message.MediaFiles[0].Name}{message.MediaFiles[0].Extension}",
-            MessageType.Voice => $"voice: {message.MediaFiles[0].Name}{message.MediaFiles[0].Extension}",
+            MessageType.Sticker => $"sticker: {file}",
+            MessageType.Photo => $"photo: {file}",
+            MessageType.Video => $"video: {file}",
+            MessageType.Voice => $"voice: {file}",
             MessageType.Album => $"album, number of media: {message.MediaFiles.Count}",
-            MessageType.Audio => $"audio: {message.MediaFiles[0].Name}{message.MediaFiles[0].Extension}",
-            MessageType.Animation => $"animation: {message.MediaFiles[0].Name}{message.MediaFiles[0].Extension}",
-            MessageType.Document => $"document or file: {message.MediaFiles[0].Name}{message.MediaFiles[0].Extension}",
-            MessageType.VideoNote => $"video note: {message.MediaFiles[0].Name}{message.MediaFiles[0].Extension}",
-            MessageType.Unknown => $"unknown info",
+            MessageType.Audio => $"audio: {file}",
+            MessageType.Animation => $"animation: {file}",
+            MessageType.Document => $"document or file: {file}",
+            MessageType.VideoNote => $"video note: {file}",
+            MessageType.Unknown => "unknown info",
             _ => throw new ArgumentOutOfRangeException()
         };
         
