@@ -15,9 +15,6 @@ class Session(WsServer server, MLogger logger) : WsSession(server)
     public override void OnWsConnected(HttpRequest request)
     {
         Logger.LogSuccess($"Chat WebSocket session with Id {Id} connected!");
-        
-        //string message = "Hello from WebSocket chat! Please send a message or '!' to disconnect the client!";
-        //SendTextAsync(message);
     }
 
     public override void OnWsDisconnected()
@@ -33,17 +30,17 @@ class Session(WsServer server, MLogger logger) : WsSession(server)
         var message = JsonSerializer.Deserialize<Message>(jsonMessage);
 
         var file = string.Empty;
-        if (message.MediaFiles.Count > 0)
-            file = $"{message.MediaFiles[0].Name}{message.MediaFiles[0].Extension}";
+        if (message.Files.Count > 0)
+            file = $"{message.Files[0].Name}{message.Files[0].Extension}";
         
-        var messageInfo = message.MessageType switch
+        var messageInfo = message.Type switch
         {
-            MessageType.Text => $"text: {message.Content}",
+            MessageType.Text => $"text: {message.Text}",
             MessageType.Sticker => $"sticker: {file}",
             MessageType.Photo => $"photo: {file}",
             MessageType.Video => $"video: {file}",
             MessageType.Voice => $"voice: {file}",
-            MessageType.Album => $"album, number of media: {message.MediaFiles.Count}",
+            MessageType.Album => $"album, number of media: {message.Files.Count}",
             MessageType.Audio => $"audio: {file}",
             MessageType.Animation => $"animation: {file}",
             MessageType.Document => $"document or file: {file}",
@@ -54,7 +51,7 @@ class Session(WsServer server, MLogger logger) : WsSession(server)
         
         logger.LogInformation($"Received from {message.Messenger.Name} with {messageInfo}");
         
-        if (message.Content == "!")
+        if (message.Text == "!")
             Close(1000);
     }
 

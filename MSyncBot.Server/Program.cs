@@ -41,10 +41,10 @@ namespace MSyncBot.Server
                 var adminMessage = new Message(
                     new Messenger("Server", MessengerType.Server),
                     MessageType.Text,
-                    new User("Administrator"),
+                    new User("Administrator", 0),
                     new Chat("Server", 0))
                 {
-                    Content = message
+                    Text = message
                 };
 
                 var adminJsonMessage = JsonSerializer.Serialize(adminMessage);
