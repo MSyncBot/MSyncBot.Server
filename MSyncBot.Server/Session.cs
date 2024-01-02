@@ -1,4 +1,5 @@
-﻿using System.Net.Sockets;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Net.Sockets;
 using System.Text;
 using System.Text.Json;
 using MLoggerService;
@@ -21,7 +22,7 @@ class Session(WsServer server, MLogger logger) : WsSession(server)
     {
         Logger.LogError($"Chat WebSocket session with Id {Id} disconnected!");
     }
-
+    
     public override void OnWsReceived(byte[] buffer, long offset, long size)
     {
         var jsonMessage = Encoding.UTF8.GetString(buffer, (int)offset, (int)size);
